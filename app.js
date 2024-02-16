@@ -23,16 +23,18 @@ server.use(express.static(path.join(__dirname, "public")));
 //Permet d'accepter des body en Json dans les requêtes
 server.use(express.json());
 
-// Points d'accès
-server.get("/donnees", async (req, res) => {
-    try {
-        //Ceci sera remplacé par un fetch ou un appel à la base de données
-        // const donnees = require("./data/donneesTest.js");
-        console.log(req.query);
-        const direction = req.query["order-direction"] || "asc";
-        const limit = +req.query["limit"] || 50; //Mettre une valeur par défaut
 
-        const donneesRef = await db.collection("test").orderBy("user", direction).limit(limit).get();
+
+// Points d'accès aux films avec les des parametres de tri, d'ordre et de limit ////////////////////////////////////////////////////////////
+server.get("/api/films", async (req, res) => {
+    try {
+        const tri = req.query.tri || "titre";
+        const ordre = req.query.ordre || "asc";
+        const limit = +req.query.limite || 3; //Mettre une valeur par défaut
+
+        // const donneesRef = await db.collection("films").orderBy("user", direction).limit(limit).get();
+        const donneesRef = await db.collection("films").orderBy(tri, ordre).limit(limit).get();
+        // console.log(donneesRef);
         const donneesFinale = [];
 
         donneesRef.forEach((doc) => {
@@ -43,58 +45,55 @@ server.get("/donnees", async (req, res) => {
         res.json(donneesFinale);
     } catch (erreur) {
         res.statusCode = 500;
-        res.json({ message: "Une erreur est survenue. Meilleure chance la prochaine fois" });
+        res.json({ message: "Une erreur est survenue dans la requete" });
     }
 });
+
 
 /**
  * @method GET
  * @param id
  * @see url à consulter
- * Permet d'accéder à un utilisateur
+ * Permet d'accéder à un film
  */
-server.get("/donnees/:id", (req, res) => {
-    // console.log(req.params.id);
-    const donnees = require("./data/donneesTest.js");
-
-    const utilisateur = donnees.find((element) => {
-        return element.id == req.params.id;
-    });
-
-    if (utilisateur) {
+server.get("/api/films/:id", async (req, res) => {
+    const id = req.params.id;
+    const film = await db.collection("films").doc(id).get();
+    const filmData = film.data();
+    // Verification si le id du film est mauvais
+    if (!(filmData == null)) {
         res.statusCode = 200;
-        res.json(utilisateur);
+        res.json(filmData);
     } else {
         res.statusCode = 404;
-        res.json({ message: "Utilisateur non trouvé" });
+        res.json({ message: "film non trouvé" })
     }
 });
 
-server.post("/donnees", async (req, res) => {
+/**
+ * Function pour ajouter un film a la bd
+ * @method post
+ * Pour tester des donnees formulaire sans une page htmp avec formulaire dans postman, 
+ * il faut choisir raw, choisir le type de fichier en json et envoyer du contenu json 
+ */
+server.post("/api/films", async (req, res) => {
     try {
-        const test = req.body;
-
-        //Validation des données
-        if (test.user == undefined) {
-            res.statusCode = 400;
-            return res.json({ message: "Vous devez fournir un utilisateur" });
-        }
-
-        await db.collection("test").add(test);
-
-        res.statusCode = 201;
-        res.json({ message: "La donnée a été ajoutée", donnees: test });
-    } catch (error) {
-        res.statusCode = 500;
-        res.json({ message: "erreur" });
+        const nouveauFilm = req.body;
+        console.log(nouveauFilm);
+        const fimlAjouter = await db.collection("films").add(nouveauFilm);
+        res.statusCode = 200;
+        res.json({ message: `Le document avec l'id ${fimlAjouter.id} a été ajouté` });
+    } catch (err) {
+        res.status(500).send(err);
     }
-});
+})
 
+// function pour mettre les donnes test de film dans la base de donnees firebase
 server.post("/donnees/initialiser", (req, res) => {
-    const donneesTest = require("./data/donneesTest.js");
+    const donneesTest = require("./data/filmsTest.js");
 
     donneesTest.forEach(async (element) => {
-        await db.collection("test").add(element);
+        await db.collection("films").add(element);
     });
 
     res.statusCode = 200;
@@ -104,25 +103,48 @@ server.post("/donnees/initialiser", (req, res) => {
     });
 });
 
-server.put("/donnees/:id", async (req, res) => {
-    const id = req.params.id;
-    const donneesModifiees = req.body;
-    //Validation ici
 
-    await db.collection("test").doc(id).update(donneesModifiees);
-
-    res.statusCode = 200;
-    res.json({ message: "La donnée a été modifiée" });
+/**
+ * Fonction pour modifier un film en se servant de son id
+ * @method put
+ * @param id
+ */
+server.put("/api/films/:id", async (req, res) => {
+    try {
+        const id = req.params.id;
+        const film = req.body;
+        await db.collection("films").doc(id).update(film);
+        res.json({ message: `Le film avec l'id ${id} a été modifié` });
+        res.statusCode = 200;
+    } catch (err) {
+        // res.status(500).send(err);
+        res.statusCode = 500;
+        res.json({ message: "film non trouvé" })
+    }
 });
 
-server.delete("/donnees/:id", async (req, res) => {
-    const id = req.params.id;
-
-    const resultat = await db.collection("test").doc(id).delete();
-
-    res.statusCode = 200;
-    res.json({ message: "Le document a été supprimé" });
+/**
+ * Fonction pour supprimer un film de la base de données avec son id
+ * @method delete
+ * @param id
+ */
+server.delete("/api/films/:id", async (req, res) => {
+    try {
+        const id = req.params.id;
+        await db.collection("films").doc(id).delete();
+        res.json({ message: `Le film avec l'id ${id} a été supprimé` });
+        res.statusCode = 200;
+    } catch (err) {
+        res.statusCode = 500;
+        res.json({ message: "film non trouvé" })
+    }
 });
+
+
+/**
+ * Fonction pour incrire un utilsateur et l'ajouter a la bd
+ * @method post
+ */
 
 server.post(
     "/utilisateurs/inscription",
@@ -142,13 +164,7 @@ server.post(
             res.statusCode = 400;
             return res.json({ message: "Données non-conformes" });
         }
-        // On récupère les infos du body
-
-        // const courriel = req.body.courriel;
-        // const mdp = req.body.mdp;
-
         const { courriel, mdp } = req.body;
-        console.log(courriel);
         // On vérifie si le courriel existe
         const docRef = await db.collection("utilisateurs").where("courriel", "==", courriel).get();
         const utilisateurs = [];
@@ -167,10 +183,11 @@ server.post(
         // On valide/nettoie la donnée
         // TODO:
         // On encrypte le mot de passe
-        // TODO:
-        const hash = await bcrpyt.hash();
+
+        // const hash = await bcrypt.hash(mdp, 10);
 
         // On enregistre dans la DB
+        // const nouvelUtilisateur = { courriel, mdp: hash };
         const nouvelUtilisateur = { courriel, mdp };
         await db.collection("utilisateurs").add(nouvelUtilisateur);
 
@@ -178,9 +195,13 @@ server.post(
         // On renvoie true;
         res.statusCode = 200;
         res.json(nouvelUtilisateur);
-    } 
+    }
 );
 
+/**
+ * Fonction pour se connecter en tant qu'utilisateur deja inscrit
+ * 
+ */
 server.post("/utilisateurs/connexion", async (req, res) => {
     // On récupère les infos du body
     const { mdp, courriel } = req.body;
@@ -199,10 +220,12 @@ server.post("/utilisateurs/connexion", async (req, res) => {
     }
 
     const utilisateurAValider = utilisateurs[0];
-    // TODO: On encrypte le mot de passe
+    const estValide = mdp === utilisateurAValider.mdp;
+    // const estValide = await bcrypt.compare(mdp, utilisateurAValider.mdp);
+    // console.log(utilisateurAValider);
     // On compare
     // Si pas pareil, erreur
-    if (utilisateurAValider.mdp !== mdp) {
+    if (!estValide) {
         res.statusCode = 400;
         return res.json({ message: "Mot de passe invalide" });
     }
@@ -212,7 +235,7 @@ server.post("/utilisateurs/connexion", async (req, res) => {
     res.status = 200;
     res.json(utilisateurAValider);
 });
-// DOIT Être la dernière!!
+// // DOIT Être la dernière!!
 // Gestion page 404 - requête non trouvée
 
 server.use((req, res) => {
