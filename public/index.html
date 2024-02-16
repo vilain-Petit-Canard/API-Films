@@ -10,10 +10,51 @@
 
 <body>
     <h1>Documentation</h1>
+    <p>Ces site a pour but d'afficher un catalogue de films issue d'une base de donnée de firebase, il est possible a
+        l'utilisateur de s'inscrire, donc de se connecter.</p>
+    <p>l'utilsateur a la possibilité d'afficher les details d'un film en cliquant dessus, il peut rajouter un film, en
+        modifier et il peut aussi en supprimer</p>
     <h3>Les routes</h3>
     <div>
-        <span></span>
-        <p></p>
+        <span><strong>-"/api/films" (en get):</strong></span>
+        <p>Retourne la liste de tous les films, on peut trier les films par titre, par annee, ou par realisateur en
+            ordre ascendant ou descendant, avecla methode GET</p>
+    </div>
+    <div>
+        <span><strong>-"GET /api/films/:id" (en get):</strong></span>
+        <p>Retourne un seul film dont le id se trouve en parametre dans le url. le parametre id sert a trouver le bon
+            film dans la base de donnees avec la methode GET</p>
+    </div>
+    <div>
+        <span><strong>-"/api/films" (en post):</strong></span>
+        <p>chemin pour rajouter un film dans la base de donnees, à partir de données d'un formulaire envoyer a la bd
+            avec la methode en POST</p>
+    </div>
+    <div>
+        <span><strong>-"/api/films/:id" (en put):</strong></span>
+        <p>chemin pour modifier un film dans la base de donnees en le recuperant a l'aide de l'id donné en parametre,
+            avec la method PUT</p>
+    </div>
+    <div>
+        <span><strong>-"/api/films/:id" (en delete):</strong></span>
+        <p>chemin pour supprimer un film dans la base de donnees en le recuperant a l'aide de l'id donné en parametre,
+            avec la method DELETE</p>
+    </div>
+    <div>
+        <span><strong>-"/api/utilisateurs/inscription" (en post):</strong></span>
+        <p>chemin pour ajouter un utilisateur dans la base de donnees avec les donnees d'un formulaire d'inscription,
+            avec la method POST.
+            l'email et le mot de passe sont validés avant d'etre envoyés a la base de donnee. Et le mot de passe doit
+            contenir entre 8 et 20 caracteres, avec une majuscule, une miniscule, un chiffre et un symbole au minimun.
+            <p>renvoie une erreur si l'utilsateur est deja inscrit</p>
+        </p>
+    </div>
+    <div>
+        <span><strong>-"/api/utilisateurs/connexion" (en post):</strong></span>
+        <p>chemin pour connecter un utilisateur a la base de donnees avec les donnees du formulaire de connexion, avec la method POST.
+         
+            <p>renvoie une erreur si l'utilsateur n'est pas inscrit, si l'email est incorect ou si le mot de passe est incorect</p>
+        </p>
     </div>
 </body>
 
